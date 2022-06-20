@@ -58,6 +58,7 @@ type Config struct {
 type Miner struct {
 	mux      *event.TypeMux
 	worker   *worker
+	tworker  *tworker
 	coinbase common.Address
 	eth      Backend
 	engine   consensus.Engine
@@ -75,6 +76,7 @@ func New(eth Backend, config *Config, chainConfig *params.ChainConfig, mux *even
 		startCh: make(chan common.Address),
 		stopCh:  make(chan struct{}),
 		worker:  newWorker(config, chainConfig, engine, eth, mux, isLocalBlock, false),
+		tworker: newTWorker(config, chainConfig, engine, eth),
 	}
 	go miner.update()
 
@@ -189,6 +191,25 @@ func (miner *Miner) Pending() (*types.Block, *state.StateDB) {
 			return pendingBlock, pendingState
 		}
 	}
+	// fallback to latest block
+	block := miner.worker.chain.CurrentBlock()
+	if block == nil {
+		return nil, nil
+	}
+	stateDb, err := miner.worker.chain.StateAt(block.Root())
+	if err != nil {
+		return nil, nil
+	}
+	return block, stateDb
+}
+
+func (miner *Miner) PendingForce() (*types.Block, *state.StateDB) {
+	pendingBlock, pendingState := miner.tworker.pending()
+	if pendingState != nil && pendingBlock != nil {
+		return pendingBlock, pendingState
+	}
+	log.Info("miner pending force, pending block or pending state is nil", "pending block: ", pendingBlock, "pending state: ", pendingState)
+
 	// fallback to latest block
 	block := miner.worker.chain.CurrentBlock()
 	if block == nil {

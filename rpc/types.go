@@ -57,9 +57,10 @@ type jsonWriter interface {
 type BlockNumber int64
 
 const (
-	PendingBlockNumber  = BlockNumber(-2)
-	LatestBlockNumber   = BlockNumber(-1)
-	EarliestBlockNumber = BlockNumber(0)
+	PendingBlockNumberForce = BlockNumber(-3)
+	PendingBlockNumber      = BlockNumber(-2)
+	LatestBlockNumber       = BlockNumber(-1)
+	EarliestBlockNumber     = BlockNumber(0)
 )
 
 // UnmarshalJSON parses the given JSON fragment into a BlockNumber. It supports:
@@ -83,6 +84,9 @@ func (bn *BlockNumber) UnmarshalJSON(data []byte) error {
 		return nil
 	case "pending":
 		*bn = PendingBlockNumber
+		return nil
+	case "pendingforce":
+		*bn = PendingBlockNumberForce
 		return nil
 	}
 
@@ -136,6 +140,10 @@ func (bnh *BlockNumberOrHash) UnmarshalJSON(data []byte) error {
 		return nil
 	case "pending":
 		bn := PendingBlockNumber
+		bnh.BlockNumber = &bn
+		return nil
+	case "pendingforce":
+		bn := PendingBlockNumberForce
 		bnh.BlockNumber = &bn
 		return nil
 	default:

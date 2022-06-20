@@ -138,6 +138,9 @@ func (b *EthAPIBackend) StateAndHeaderByNumber(ctx context.Context, number rpc.B
 	if number == rpc.PendingBlockNumber {
 		block, state := b.eth.miner.Pending()
 		return state, block.Header(), nil
+	} else if number == rpc.PendingBlockNumberForce {
+		block, state := b.eth.miner.PendingForce()
+		return state, block.Header(), nil
 	}
 	// Otherwise resolve the block number and return its state
 	header, err := b.HeaderByNumber(ctx, number)
